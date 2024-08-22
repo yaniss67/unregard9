@@ -6,9 +6,7 @@ import os
 
 app = Flask(__name__)
 
-client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY")
-)
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 @app.route('/')
@@ -50,7 +48,7 @@ def call_chatgpt(transcript_text):
         "Ecrit directement la transcription sans intro de ta part."
         "Tu n'as pas besoin d'ecrire 'voix-off de l'auteur :' ou 'juge :'. seuls les extraits doivent être indiqués. Voici le texte :\n\n" + transcript_text
     )
-    response = client.chat.completions.create(
+    response = openai.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="gpt-4"
     )
