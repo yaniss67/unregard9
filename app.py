@@ -1,7 +1,6 @@
 from flask import Flask, request, render_template, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 import openai
-from openai import OpenAI
 import os
 
 app = Flask(__name__)
