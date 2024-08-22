@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>UN REGARD 9 TRANSCRIPTION</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #121212; /* Fond sombre */
+        }
+        .flex-container {
+            display: flex;
+            width: 98%;
+            max-width: 1920px;
+            justify-content: space-between;
+        }
+        .main-container {
+            flex: 1;
+            margin: 10px;
+            background: #333; /* Fond des conteneurs ajusté pour le mode nuit */
+            color: #f1f1f1; /* Couleur de texte claire */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            overflow-y: auto;
+            height: calc(100vh - 60px);
+        }
+        .transcription-container {
+            flex: 1;
+            margin: 10px;
+            background: #f9f9f9; /* Fond clair */
+            color: #333; /* Texte sombre */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            overflow-y: auto;
+            height: calc(100vh - 60px);
+        }
+        #input-form-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .container, .transcription-block {
+            padding: 10px;
+            margin-top: 20px;
+            border-top: 2px solid #555; /* Bordure ajustée pour mode nuit */
+        }
+        .container:first-child, .transcription-block:first-child {
+            border-top: none;
+        }
+        input[type="text"], button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px;
+            box-sizing: border-box;
+            border: 2px solid #888; /* Bordure plus claire pour le contraste */
+            border-radius: 4px;
+            background: #222; /* Fond des inputs en mode nuit */
+            color: #ddd; /* Texte en clair */
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.button-processing {
+            background-color: #FFD700; /* Jaune pour indication visuelle */
+            color: black; /* Texte en noir pour contraste */
+        }
+        .index, .transcription-index {
+            font-size: 48px;
+            color: #ccc; /* Couleur de texte ajustée pour mode nuit */
+            margin-bottom: 5px;
+            text-align: center;
+            display: inline-block;
+        }
+        .transcription-title {
+            font-size: 28px;
+            color: #333; /* Couleur de texte sombre pour le fond clair */
+            display: inline-block;
+            margin-left: 10px;
+            vertical-align: top;
+        }
+        .transcription-text {
+            font-size: 18px;
+            margin-top: 10px;
+            color: #333; /* Texte sombre pour le fond clair */
+            white-space: pre-wrap;
+        }
+        .excerpt {
+            color: red; /* Extrait en rouge pour contraste */
+            font-weight: bold;
+            margin: 3px 0 0 0; /* Espacement ajusté */
+        }
+    </style>
+</head>
+<body>
+    <div class="flex-container">
+        <div class="main-container">
+            <h1>TRANSCRIPTION : UN REGARD 9</h1>
+            <div id="input-form-list">
+                <!-- Initial container setup on page load -->
+            </div>
+            <button onclick="addFields()">Ajouter plus d'extraits</button>
+            <button onclick="removeField()">Enlever un extrait</button>
+            <button id="transcribeButton" onclick="submitForm()">Transcrire</button>
+        </div>
+        <div class="transcription-container" id="transcriptions">
+            <!-- Transcription display area -->
+        </div>
+    </div>
+
+    <script>
+        let index = 1; // Compteur pour les extraits
+
+        window.onload = function() {
+            addFields(); // Initial call to set up the first input group
+        }
+
+        function addFields() {
+            const container = document.getElementById('input-form-list');
+            const newContainer = document.createElement('div');
+            newContainer.className = 'container';
+            newContainer.innerHTML = `
+                <div class="index">${index}</div>
+                <input type="text" name="title[]" placeholder="Titre">
+                <input type="text" name="video_url[]" placeholder="Entrez l'URL de la vidéo YouTube">
+                <input type="text" name="start_time[]" placeholder="Début de l'extrait (MM:SS)">
+                <input type="text" name="end_time[]" placeholder="Fin de l'extrait (MM:SS)">
+            `;
+            container.appendChild(newContainer);
+            index++; // Increment index for each new excerpt
+        }
+
+        function removeField() {
+            const containers = document.querySelectorAll('.container');
+            if (containers.length > 1) {
+                containers[containers.length - 1].remove();
+                index--;
+            }
+        }
+
+        function submitForm() {
+            const button = document.getElementById('transcribeButton');
+            button.classList.add('button-processing');
+            button.textContent = 'Transcription en cours...';
+
+            const transcriptionDiv = document.getElementById('transcriptions');
+            transcriptionDiv.innerHTML = ''; // Clear previous transcriptions
+            const inputs = document.querySelectorAll('.container');
+            let promises = [];
+            inputs.forEach((container, idx) => {
+                const title = container.querySelector('input[name="title[]"]').value;
+                const videoUrl = container.querySelector('input[name="video_url[]"]').value;
+                const startTime = container.querySelector('input[name="start_time[]"]').value;
+                const endTime = container.querySelector('input[name="end_time[]"]').value;
+
+                let promise = fetch('/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        video_url: videoUrl,
+                        start_time: startTime,
+                        end_time: endTime
+                    })
+                })
+                .then(response => response.json());
+
+                promises.push(promise);
+            });
+
+            Promise.all(promises).then(results => {
+                results.forEach((data, index) => {
+                    if (data.status === 'success') {
+                        const block = document.createElement('div');
+                        block.className = 'transcription-block';
+                        block.innerHTML = `
+                            <div class="transcription-index">${index + 1}</div>
+                            <div class="transcription-title">${inputs[index].querySelector('input[name="title[]"]').value.toUpperCase()}</div>
+                            <div class="transcription-text">${formatExcerpts(data.chatgpt_response)}</div>`;
+                        transcriptionDiv.appendChild(block);
+                    } else {
+                        alert(data.message);
+                    }
+                });
+                button.classList.remove('button-processing');
+                button.textContent = 'Transcrire';
+            }).catch(error => {
+                console.error('Error:', error);
+                button.classList.remove('button-processing');
+                button.textContent = 'Transcrire';
+            });
+        }
+
+        function formatExcerpts(text) {
+            const regex = /EXTRAIT :([\s\S]*?)FIN DE L'EXTRAIT/g;
+            return text.replace(regex, function(match, p1) {
+                return `<div class="excerpt">EXTRAIT :${p1.trim()}FIN DE L'EXTRAIT</div>`;
+            });
+        }
+    </script>
+</body>
+</html>
