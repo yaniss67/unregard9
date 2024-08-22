@@ -2,10 +2,24 @@ from flask import Flask, request, render_template, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 import openai
 import os
+import requests
 
 app = Flask(__name__)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Informations de connexion au proxy
+proxy_host = "206.41.172.74"
+proxy_port = "6634"
+proxy_username = "htugeksf"
+proxy_password = "0jzrkd2tfska"
+
+proxy_url = f'socks5://{proxy_username}:{proxy_password}@{proxy_host}:{proxy_port}'
+
+proxies = {
+    'http': proxy_url,
+    'https': proxy_url
+}
 
 
 @app.route('/')
